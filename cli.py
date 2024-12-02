@@ -39,8 +39,12 @@ class VideoSubtitleOverlay:
         print(f"Транскрипция завершена. - {self.subtitles}")
         return self.subtitles
     
-    def subtitle_adder(self, input_sublitles = None):
-        self.subtitles = self.subtitles or input_sublitles
+    def subtitle_adder(self, input_video = None, input_sublitles = None):
+        
+        if input_video and input_sublitles:
+            self.subtitles = {input_video : input_sublitles}
+            print(self.subtitles)
+        
 
         if self.subtitles:
             for path, srt_path in self.subtitles.items():
@@ -53,7 +57,7 @@ class VideoSubtitleOverlay:
                 audio = video.audio
                 try:
                     ffmpeg.concat(
-                        video.filter('subtitles', srt_path, force_style="OutlineColour=&H40000000,BorderStyle=3,MarginV=50"), audio, v=1, a=1
+                        video.filter('subtitles', srt_path, force_style="OutlineColour=&H40000000,BorderStyle=1,MarginV=50"), audio, v=1, a=1
                     ).output(out_path).run(quiet=False, overwrite_output=True)
                     print(f"Saved subtitled video to {os.path.abspath(out_path)}.")
                 except Exception as e: 
@@ -114,8 +118,9 @@ if __name__ == "__main__":
     model = "medium" # "tiny", "small", "medium", "large"
     video_path = "uploads_media/video/v.mp4"
     output_dir = "uploads_media/subs"
+    sub_path = "uploads_media/subs/v.srt"
     output_str = True
 
     transcription = VideoSubtitleOverlay(model, video_path, output_dir, output_str)
-    transcription.transcribe()
-    transcription.subtitle_adder()
+    # transcription.transcribe()
+    transcription.subtitle_adder(video_path, sub_path)
