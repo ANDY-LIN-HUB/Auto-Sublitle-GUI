@@ -8,25 +8,24 @@ from utils import filename, write_srt
 
 
 
+
 class VideoSubtitleOverlay:
-    def __init__(self, model_name="medium", video_path=None, output_dir="uploads_media/subs", output_srt=True):
+    def __init__(self, model_name: str, video_path: str, output_dir: str, output_srt:bool):
         self.model_name = model_name
-        self.video_path = video_path or 'uploads_media/video/v.mp4'  # Значение по умолчанию
+        self.video_path = video_path
         self.output_dir = output_dir
         self.output_srt = output_srt
-        self.model = self.load_model()
+        self.model = model
 
         self.subtitles = None
 
-    def load_model(self):
-        """Загружает модель Whisper."""
-        print("Загружаем модель Whisper...")
-        model = whisper.load_model(self.model_name)  # Можно указать другую модель: "tiny", "small", "medium", "large"
-        print("Модель успешно загружена.")
-        return model
-
     def transcribe(self):
         """Процесс транскрипции."""
+
+        print(f"Загрузка модели Whisper: {model}...")
+        self.model = whisper.load_model(model)
+        print("Модель Whisper успешно загружена.")
+
         print(f"Транскрибируем файл {self.video_path}...")
         
         # Извлекаем аудио из видео
@@ -40,21 +39,28 @@ class VideoSubtitleOverlay:
         print(f"Транскрипция завершена. - {self.subtitles}")
         return self.subtitles
     
-    def subtitle_adder(self):
-        for path, srt_path in self.subtitles.items():
-            out_path = os.path.join("uploads_media/subs", f"{filename(path)}.mp4")
+    def subtitle_adder(self, input_sublitles = None):
+        self.subtitles = self.subtitles or input_sublitles
 
-            print(f"Adding subtitles to {out_path}...")
-            print(f'path: {path}, srt_path: {srt_path}')
+        if self.subtitles:
+            for path, srt_path in self.subtitles.items():
+                out_path = os.path.join("uploads_media/subs", f"{filename(path)}.mp4")
 
-            video = ffmpeg.input(path)
-            audio = video.audio
+                print(f"Adding subtitles to {out_path}...")
+                print(f'path: {path}, srt_path: {srt_path}')
 
-            ffmpeg.concat(
-                video.filter('subtitles', srt_path, force_style="OutlineColour=&H40000000,BorderStyle=3"), audio, v=1, a=1
-            ).output(out_path).run(quiet=False, overwrite_output=True)
-
-            print(f"Saved subtitled video to {os.path.abspath(out_path)}.")
+                video = ffmpeg.input(path)
+                audio = video.audio
+                try:
+                    ffmpeg.concat(
+                        video.filter('subtitles', srt_path, force_style="OutlineColour=&H40000000,BorderStyle=3,MarginV=50"), audio, v=1, a=1
+                    ).output(out_path).run(quiet=False, overwrite_output=True)
+                    print(f"Saved subtitled video to {os.path.abspath(out_path)}.")
+                except Exception as e: 
+                    print(e)
+                
+        else: 
+            print(f"Ошибка задания путей. Subtitles = {self.subtitles}")
 
 
 
@@ -100,7 +106,16 @@ def get_subtitles(audio_paths: list, output_srt: bool, output_dir: str, transcri
 
     return subtitles_path
 
+
+
+
 if __name__ == "__main__":
-    transcription = VideoSubtitleOverlay()
+
+    model = "medium" # "tiny", "small", "medium", "large"
+    video_path = "uploads_media/video/v.mp4"
+    output_dir = "uploads_media/subs"
+    output_str = True
+
+    transcription = VideoSubtitleOverlay(model, video_path, output_dir, output_str)
     transcription.transcribe()
     transcription.subtitle_adder()
